@@ -15,6 +15,7 @@
 #include <target.h>
 #include <update.h>
 #include <cfg.h>
+#include <stm32f407.h>
 /*----------------------------------------------------------------------------
  Section: Type Definitions
  ----------------------------------------------------------------------------*/
@@ -26,7 +27,6 @@ static void reset_routine(void);
 static void default_routine(void);
 static void dummy(void);
 static void systick_routine(void);
-static void jump_to_app(uint32_t address);
 int main(void);
 
 /*-----------------------------------------------------------------------------
@@ -37,6 +37,8 @@ extern uint32_t _bss;   //The start of bss;
 extern uint32_t _ebss;
 extern uint32_t _data;
 extern uint32_t _edata;
+
+extern void set_led(uint8_t on);
 
 /*-----------------------------------------------------------------------------
  Section: Private Variables
@@ -221,26 +223,30 @@ dummy(void)
 static void
 systick_routine(void)
 {
-       static uint32_t ms = 0u; /* 毫秒数 */
+    static uint32_t ms = 0u; /* 毫秒数 */
+    static uint8_t led = 0u;
 
-        /* 每毫秒中断一次 */
-        ms++;
-        if (ms < 1000)
-        {
-            return;
-        }
-        ms = 0;
+    if (ms % (get_run_status() == RS_IDLE ? 500 : 100) == 0)
+    {
+        set_led(led++);
+    }
+    /* 每毫秒中断一次 */
+    ms++;
+    if (ms < 1000)
+    {
+        return;
+    }
+    ms = 0;
 
-        /* 如果超过允许运行时间(10分钟)，则不再喂狗，使其自动复位 */
-        if (the_run_time >= (10u * 60u))
-        {
-            /* reboot */
-            //TODO 超时需复位
-//          print("reboot!\r\n");
-//          reset();
-            return;
-        }
-        the_run_time++;
+    /* 如果超过允许运行时间(5分钟)，则不再喂狗，使其自动复位 */
+    if (the_run_time >= (5u * 60u))
+    {
+        /* reboot */
+        print("reboot!\r\n");
+        NVIC_SystemReset();
+        return;
+    }
+    the_run_time++;
 }
 
 /**
@@ -255,6 +261,9 @@ systick_routine(void)
 int32_t
 main(void)
 {
+    pFunction Jump_To_Application;
+    uint32_t JumpAddress;
+
     /* 初始化设备 */
     hw_init();
 
@@ -277,8 +286,13 @@ main(void)
     systick_stop();
     /* 跳转至应用系统 */
     print("Enter application ...\r\n");
-    /* 跳转 */
-    jump_to_app(*(volatile uint32_t *) (APP_START_ADDRESS + 4u));
+
+    /* Jump to user application */
+    JumpAddress = *(__IO uint32_t*) (APP_START_ADDRESS + 4);
+    Jump_To_Application = (pFunction) JumpAddress;
+    /* Initialize user application's Stack Pointer */
+    __set_MSP(*(__IO uint32_t*) APP_START_ADDRESS);
+    Jump_To_Application();
 
     return 0;
 }
@@ -296,36 +310,6 @@ extern uint32_t
 get_systime(void)
 {
     return the_run_time;
-}
-
-/**
- ******************************************************************************
- * @brief   跳转到应用程序地址
- * @param[in]  address  : 跳转地址
- * @param[out] None
- *
- * @retval     None
- * todo: 将汇编改为c程序
- ******************************************************************************
- */
-static void
-jump_to_app(uint32_t address)
-{
-    __asm(
-            "movw    r3, #32768\n"
-            "movt    r3, #2048\n"
-            "ldr r3, [r3, #0]\n"
-            "mov r0, r3\n"
-            "msr   MSP, r0"
-    );
-
-    __asm(
-            "movw    r3, #32772\n"
-            "movt    r3, #2048\n"
-            "ldr r3, [r3, #0]\n"
-            "mov r0, r3\n"
-            "bx r0"
-    );
 }
 
 /*--------------------------------End of main.c------------------------------*/

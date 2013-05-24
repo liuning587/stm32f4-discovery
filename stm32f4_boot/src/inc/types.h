@@ -41,6 +41,8 @@ typedef int     status_t;
 #define NULL    ((void *)0)
 #endif
 
+typedef  void (*pFunction)(void);
+
 typedef void    (*OSFUNCPTR) (void *);  /* ptr to function returning int */
 typedef int     (*FUNCPTR) ();          /* ptr to function returning int */
 typedef void    (*VOIDFUNCPTR) ();      /* ptr to function returning void */

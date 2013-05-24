@@ -21,7 +21,7 @@
 #define BAUDRATE              115200u
 #endif
 
-#define UART_BASE             ((USART_TypeDef *) USART1_BASE)
+#define UART_BASE             ((USART_TypeDef *) USART6_BASE)
 
 /*-----------------------------------------------------------------------------
  Section: Private Function Prototypes
@@ -54,7 +54,10 @@ hw_init(void)
     /* 使能外设 */
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
-    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
+    RCC->AHB1ENR |= RCC_AHB1ENR_GPIODEN;
+//    RCC->APB2ENR |= RCC_APB2ENR_USART1EN;
+//    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
     led_init();
 
@@ -80,14 +83,7 @@ systick_open(void)
 	RCC_ClocksTypeDef clocks_status;
 
 	RCC_GetClocksFreq(&clocks_status);
-#if 0
 
-    SysTick->LOAD = ((clocks_status.HCLK_Frequency / 1000)
-            & SysTick_LOAD_RELOAD_Msk) - 1;
-    SysTick->VAL = 0;
-    SysTick->CTRL = SysTick_CTRL_CLKSOURCE_Msk | SysTick_CTRL_TICKINT_Msk
-            | SysTick_CTRL_ENABLE_Msk;
-#endif
     SysTick_Config(clocks_status.HCLK_Frequency / 1000);
     return;
 }
@@ -119,25 +115,31 @@ systick_stop(void)
 void
 uart_init(void)
 {
+#if 0
     GPIO_InitTypeDef gpio_inits;
     USART_InitTypeDef usart_inits;
 
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE); //开启USART1时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOA, ENABLE);  //开启GPIOA时钟
     /* UART IO口线设置 */
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource9, GPIO_AF_USART1);
     GPIO_PinAFConfig(GPIOA, GPIO_PinSource10, GPIO_AF_USART1);
+//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);//这相当于M3的开启复用时钟？只配置复用的引脚，
+//    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);//
 
-    gpio_inits.GPIO_OType = GPIO_OType_PP;
-    gpio_inits.GPIO_PuPd = GPIO_PuPd_UP;
+    GPIO_Init(GPIOA, &gpio_inits);
+//    gpio_inits.GPIO_OType = GPIO_OType_PP;
+//    gpio_inits.GPIO_PuPd = GPIO_PuPd_UP;
     gpio_inits.GPIO_Mode = GPIO_Mode_AF;
     gpio_inits.GPIO_Speed = GPIO_Speed_50MHz;
 
     /* Configure USART Tx as alternate function  */
     gpio_inits.GPIO_Pin = GPIO_Pin_9;
-    GPIO_Init(GPIOB, &gpio_inits);
+    GPIO_Init(GPIOA, &gpio_inits);
 
     /* Configure USART Rx as alternate function  */
     gpio_inits.GPIO_Pin = GPIO_Pin_10;
-    GPIO_Init(GPIOB, &gpio_inits);
+    GPIO_Init(GPIOA, &gpio_inits);
 
     usart_inits.USART_BaudRate = BAUDRATE;
     usart_inits.USART_WordLength = USART_WordLength_8b;
@@ -148,6 +150,45 @@ uart_init(void)
 
     USART_Init(UART_BASE, &usart_inits);
     UART_BASE->CR1 |= USART_CR1_UE;
+#endif
+    GPIO_InitTypeDef GPIO_InitStructure;
+    USART_InitTypeDef USART_InitStructure;
+    USART_ClockInitTypeDef USART_ClockInitStruct;
+    RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART6, ENABLE); //开启USART6时钟
+    RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOC, ENABLE);  //开启GPIOC时钟
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource6, GPIO_AF_USART6);//这相当于M3的开启复用时钟？只配置复用的引脚，
+    GPIO_PinAFConfig(GPIOC, GPIO_PinSource7, GPIO_AF_USART6);//
+    /*配置GPIOC*/
+    GPIO_StructInit(&GPIO_InitStructure);      //缺省值填入
+
+    /*配置GPIOC_Pin6为TX输出*/
+    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_6;
+    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF;     //设置为复用，必须为AF，OUT不行
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOC,&GPIO_InitStructure);
+
+    /*配置GPIOC_Pin7为RX输入*/
+    GPIO_InitStructure.GPIO_Pin=GPIO_Pin_7;
+    GPIO_InitStructure.GPIO_Mode=GPIO_Mode_AF;     //这也必须为复用，与M3不同！
+    GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
+    GPIO_Init(GPIOC,&GPIO_InitStructure);
+
+    /*IO引脚复用功能设置，与之前版本不同*/
+    /*配置USART6*/
+    USART_StructInit(&USART_InitStructure);
+    USART_InitStructure.USART_BaudRate = BAUDRATE;
+    USART_InitStructure.USART_WordLength = USART_WordLength_8b;
+    USART_InitStructure.USART_StopBits = USART_StopBits_1;
+    USART_InitStructure.USART_Parity = USART_Parity_No;
+    USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
+    USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
+
+    USART_Init(USART6, &USART_InitStructure);
+    USART_ClockStructInit(&USART_ClockInitStruct);    //之前没有填入缺省值，是不行的
+    USART_ClockInit(USART6, &USART_ClockInitStruct);
+
+//    USART_ITConfig(USART6, USART_IT_RXNE, ENABLE);    //使能 USART6中断
+    USART_Cmd(USART6, ENABLE);         //使能 USART6
 }
 
 /**
@@ -167,9 +208,31 @@ void led_init(void)
 	led_inits.GPIO_PuPd = GPIO_PuPd_DOWN;
 	led_inits.GPIO_Mode = GPIO_Mode_OUT;
 	led_inits.GPIO_Speed = GPIO_Speed_50MHz;
-	led_inits.GPIO_Pin = GPIO_Pin_2;
+	led_inits.GPIO_Pin = GPIO_Pin_12;
 
-    GPIO_Init(GPIOB, &led_inits);
+    GPIO_Init(GPIOD, &led_inits);
+    GPIO_SetBits(GPIOD, GPIO_Pin_12);
+}
+
+/**
+ ******************************************************************************
+ * @brief   设置led
+ * @param[in]  None
+ * @param[out] None
+ *
+ * @retval     None
+ ******************************************************************************
+ */
+void set_led(uint8_t on)
+{
+    if (on & 0x01)
+    {
+        GPIO_SetBits(GPIOD, GPIO_Pin_12);
+    }
+    else
+    {
+        GPIO_ResetBits(GPIOD, GPIO_Pin_12);
+    }
 }
 
 /**
@@ -183,11 +246,11 @@ void led_init(void)
 void
 uart_send(const uint8_t c)
 {
+    USART_SendData(UART_BASE, (uint16_t)c);
     /* 等待完成发送 */
     while (USART_GetFlagStatus(UART_BASE, USART_FLAG_TXE) == RESET)
     {
     }
-    UART_BASE->DR = (uint16_t)c & 0x01FFu;
 }
 
 /**
@@ -295,9 +358,6 @@ iflash_init(void)
 {
     /* 解锁 */
     FLASH_Unlock();
-    /* 清除状态 */
-    FLASH_ClearFlag(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
-            FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 }
 
 /**
@@ -316,9 +376,9 @@ iflash_erase(uint32_t address,
 {
     uint32_t i;
 
-    for (i = FLASH_Sector_2; i <= FLASH_Sector_7; i += 8u)
+    for (i = FLASH_Sector_1; i <= FLASH_Sector_3; i += 8u)
     {
-        if (!FLASH_EraseSector(i, VoltageRange_3))  //TODO !的用法需确认
+        if (FLASH_COMPLETE != FLASH_EraseSector(i, VoltageRange_3))  //TODO !的用法需确认
         {
             return FALSE;
         }

@@ -193,7 +193,7 @@ uart_update(void)
                 iflash_init();
 
                 /* 擦除将要更新的空间 */
-                if (!iflash_erase(start_address, transfer_size))
+                if (TRUE != iflash_erase(start_address, transfer_size))
                 {
                     s = COMMAND_RET_FLASH_FAIL;
                 }
@@ -523,12 +523,12 @@ check_sum(const uint8_t cmd,
     return (s == sum) ? TRUE : FALSE;
 }
 
-#if 0
+
 
 uint32_t
 get_run_status(void)
 {
 	return the_run_status;
 }
-#endif
+
 /*------------------------------End of update.c------------------------------*/
