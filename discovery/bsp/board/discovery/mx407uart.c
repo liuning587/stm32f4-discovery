@@ -1,6 +1,6 @@
 /**
  ******************************************************************************
- * @file      mx207uart.c
+ * @file      mx407uart.c
  * @brief     C Source file of mx207uart.c.
  * @details   This file including all API functions's 
  *            implement of mx207uart.c.	

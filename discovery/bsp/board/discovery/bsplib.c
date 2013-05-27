@@ -54,7 +54,7 @@ mcuClkSetup(void)
     //
     //使能外设
     //
-#if 0
+#if 1
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOAEN;
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOBEN;
     RCC->AHB1ENR |= RCC_AHB1ENR_GPIOCEN;
