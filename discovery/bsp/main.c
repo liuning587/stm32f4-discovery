@@ -123,11 +123,9 @@ rootTask(void *p_arg)
  */
 int main(void)
 {
-    puts("1111!");
     /* 1. 初始化系统主频 */
     mcuClkSetup();
 
-    puts("2222");
     /* 2. 初始化OS内存管理单元 */
     if (OK != memlib_init((uint32_t)&heap_low, (uint32_t)(&cstack_top - 0x200)))
     {
@@ -135,7 +133,6 @@ int main(void)
         while(1);
     }
 
-    puts("333");
     /* 3. 初始化OS中断向量表 */
     if (OK != intLibInit())
     {
@@ -143,11 +140,9 @@ int main(void)
         while(1);
     }
 
-    puts("444");
     /* 4. 执行OS启动之前的初始化 */
     bspHwInit();
 
-    puts("444");
     /* 5. 起根任务，做时钟节拍初始化 */
     (void)taskSpawn((const signed char*)"root", 1u,
             ROOT_STACK_SIZE, rootTask, 0u);

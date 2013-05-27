@@ -1,12 +1,12 @@
 /* Entry Point */
 ENTRY(resetRoutine)
 
-cstack_top = 0x20030000;    /* end of 192K RAM */
+cstack_top = 0x2001c000;    /* end of 192K RAM */
 
 MEMORY
 {
     FLASH (rx) : ORIGIN = 0x08004000, LENGTH = 1008K
-    SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 8K
+    SRAM (rwx) : ORIGIN = 0x20000000, LENGTH = 192K
 }
 
 SECTIONS
