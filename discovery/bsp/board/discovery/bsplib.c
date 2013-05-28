@@ -16,6 +16,7 @@
 #include <types.h>
 #include <intLib.h>
 #include <stm32f407.h>
+#include <gpio.h>
 
 #if (BOARD_BUILD_VER == BOARD_ST407)
 
@@ -129,6 +130,11 @@ print1(const char_t* str)
 void bsp_reboot(void)
 {
     NVIC_SystemReset();
+}
+
+void bsp_dev_init(void)
+{
+    (void)gpio_init();
 }
 
 void

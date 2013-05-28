@@ -50,6 +50,7 @@ extern uint32_t bsp_get_mcu_clk(void);
 extern void usrapp_init(void);
 extern void mcuClkSetup(void);
 extern void bspHwInit(void);
+extern void bsp_dev_init(void);
 #if (USE_TTY == 1u)
 extern void tty_init(void);
 #endif
@@ -103,13 +104,16 @@ rootTask(void *p_arg)
     /* 5. OS其他资源模块初始化 */
     os_resource_init();
 
-    /* 6. 输出OS banner */
+    /* 6. 初始化驱动程序 */
+    bsp_dev_init();
+
+    /* 7. 输出OS banner */
     os_print_banner();
     printf("  MCU is running at %d.%d MHz\n", bsp_get_mcu_clk() / 1000000,
             (bsp_get_mcu_clk() % 1000000) / 100000);
     puts("...."BOARD_BANNER" APP START...");
 
-    /* 7. 进入应用程序 */
+    /* 8. 进入应用程序 */
     usrapp_init();
 }
 

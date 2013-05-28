@@ -31,6 +31,7 @@
 #ifndef __CORE_CM4_H_GENERIC
 #define __CORE_CM4_H_GENERIC
 
+#include <types.h>
 
 /** \mainpage CMSIS Cortex-M4
 
