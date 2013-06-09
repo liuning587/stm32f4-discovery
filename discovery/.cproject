@@ -59,6 +59,7 @@
 								</option>
 								<option id="org.eclipse.cdt.cross.arm.gnu.c.link.option.libs.675313724" name="Libraries (-l)" superClass="org.eclipse.cdt.cross.arm.gnu.c.link.option.libs" valueType="libs">
 									<listOptionValue builtIn="false" value="stm32f4lib"/>
+									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="mxos"/>
 								</option>
 								<inputType id="org.eclipse.cdt.cross.arm.gnu.c.linker.input.1235400242" superClass="org.eclipse.cdt.cross.arm.gnu.c.linker.input">
