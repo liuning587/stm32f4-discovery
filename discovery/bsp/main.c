@@ -100,7 +100,6 @@ rootTask(void *p_arg)
 #if (SHELL_STACK_SIZE != 0u)
     shell_init(SHELL_STACK_SIZE);
 #endif
-
     /* 5. OS其他资源模块初始化 */
     os_resource_init();
 
@@ -127,33 +126,41 @@ rootTask(void *p_arg)
  */
 int main(void)
 {
-    /* 1. 初始化系统主频 */
-    mcuClkSetup();
-
-    /* 2. 初始化OS内存管理单元 */
-    if (OK != memlib_init((uint32_t)&heap_low, (uint32_t)(&cstack_top - 0x200)))
+    do
     {
-        puts("mem_init err!");
-        while(1);
-    }
+        /* 1. 初始化系统主频 */
+        mcuClkSetup();
 
-    /* 3. 初始化OS中断向量表 */
-    if (OK != intLibInit())
-    {
-        puts("intLibInit err!");
-        while(1);
-    }
+        /* 2. 初始化OS内存管理单元 */
+        if (OK != memlib_add((uint32_t)&heap_low,
+                (uint32_t)(&cstack_top - 0x200)))
+        {
+            puts("mem_add 1 err!");
+            break;
+        }
+        if (OK != memlib_add(0x10000000, 0x1000ffff))   /* 407有两段内存 */
+        {
+            puts("mem_add 2 err!");
+            break;
+        }
 
-    /* 4. 执行OS启动之前的初始化 */
-    bspHwInit();
+        /* 3. 初始化OS中断向量表 */
+        if (OK != intLibInit())
+        {
+            puts("intLibInit err!");
+            break;
+        }
 
-    /* 5. 起根任务，做时钟节拍初始化 */
-    (void)taskSpawn((const signed char*)"root", 1u,
-            ROOT_STACK_SIZE, rootTask, 0u);
+        /* 4. 执行OS启动之前的初始化 */
+        bspHwInit();
 
-    /* 6. 启动OS调度器 */
-    vTaskStartScheduler();
+        /* 5. 起根任务，做时钟节拍初始化 */
+        (void)taskSpawn((const signed char*)"root", 1u,
+                ROOT_STACK_SIZE, rootTask, 0u);
 
+        /* 6. 启动OS调度器 */
+        vTaskStartScheduler();
+    } while (0);
     /* We should never get here as control is now taken by the scheduler */
     while (1);
 
